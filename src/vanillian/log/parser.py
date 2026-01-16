@@ -10,7 +10,6 @@ def register_subparser(subparsers: argparse._SubParsersAction[argparse.ArgumentP
         help="Parse and canonicalize log lines in the vault log file.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("test")
     parser.add_argument(
         "file",
         nargs="?",

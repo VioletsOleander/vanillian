@@ -35,14 +35,12 @@ def main() -> int:
             logger.exception("An error occurred while canonicalizing the log.")
             return 1
     elif args.command == "commit":
-        from .commit.regular import Frequency, GitCommitRegularly
+        from .commit.regular import GitCommitRegularly
 
         try:
             command = GitCommitRegularly()
-            frequency = Frequency[args.frequency.upper()]
-
             command.execute(
-                frequency,
+                frequency=args.frequency,
                 late=args.late,
                 edit=args.edit,
             )

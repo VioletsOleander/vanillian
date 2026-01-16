@@ -20,7 +20,7 @@ def _make_daily_headline(commit_day: datetime.datetime) -> str:
 def _make_weekly_headline(commit_day: datetime.datetime) -> str:
     """Construct weekly commit headline based on the given commit day."""
     day_of_month = int(commit_day.strftime("%d"))
-    week_of_month = (day_of_month) // 7 + 1
+    week_of_month = (day_of_month - 1) // 7 + 1
 
     month = commit_day.strftime("%B")
     year = commit_day.strftime("%Y")
@@ -60,4 +60,19 @@ class GitCommitRegularly:
             command.append("-e")
         command.extend(["-m", headline])
 
-        subprocess.run(command, check=True)  # noqa: S603
+        # If specify `capture_output=True`, dead lock will happen:
+        # python initiates git -> git initiates editor
+        # -> editor waits for user input
+        # -> git waits for editor to exit -> python waits for git to exit
+        # since `capture_output=True`, python captures all signals sent
+        # from git, so after the git opened the editor, the editor's
+        # signal of drawing a UI for user input is not sent to the terminal,
+        # but block by python.
+        # Therefore, the user can never interact with the editor, causing
+        # git never exits, causing python never exits -> dead lock.
+
+        result = subprocess.run(command)  # noqa: S603, PLW1510
+
+        # allow the user to abort the commit (return code 1)
+        if result.returncode not in (0, 1):
+            raise RuntimeError(f"Git commit failed with return code {result.returncode}")
