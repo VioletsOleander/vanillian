@@ -53,12 +53,12 @@ class LogCanonicalizer:
         for idx, line in enumerate(lines):
             if (match := _match_section(line, self.section_patterns)) is not None:
                 level = logger.info if current_section != _LogSection.Other else logger.debug
-                level("Line: %d: Entering section: '%s'", idx, current_section.value)
+                level("Line: %d: Entering section: '%s'", idx, match.value)
                 current_section = match
             elif self.log_item_pattern.match(line) and current_section != _LogSection.Other:
-                logger.info("Line: %d: Processing log item", idx)
+                logger.info("Line: %d: Processing...", idx)
                 lines[idx] = self._canonicalize_line(current_section, line, force=force)
-                logger.info("Line: %d: Finished processing log item", idx)
+                logger.info("Line: %d: Finished processing.", idx)
 
         logger.info("Log canonicalization completed.")
 
@@ -74,7 +74,7 @@ class LogCanonicalizer:
         """Canonicalize a log line if not already in canonical form.
 
         Args:
-            log_section (LogSection): The section of the log (Doc or Paper).
+            log_section (LogSection): The section of the log.
             line (str): The log line to be canonicalized.
             prefix_sep (str, optional): The separator before the log item. Defaults to "[[".
             suffix_sep (str, optional): The separator after the log item. Defaults to "]]".
@@ -87,7 +87,7 @@ class LogCanonicalizer:
         log_item, _, line_suffix = line_suffix.rpartition(suffix_sep)
 
         if self._canonicalize_item(log_section, log_item) == log_item:
-            logger.info("Log line '%s' is already canonicalized.", line)
+            logger.debug("Log line '%s' is already canonicalized.", line)
             return line
 
         logger.info("Log line '%s' is not canonicalized.", line)
@@ -108,6 +108,8 @@ class LogCanonicalizer:
 
         For items in the "Doc" section, the canonical format is: `doc-notes/<path>|<path>`
 
+        For items in the "Wiki" section, the canonical format is: `wiki-notes/<path>|<path>`
+
         For items in the "Paper" section, the canonical format is:
         `paper-notes/<path>|<year>-<publisher>-<title>`, where `<year>`, `<publisher>`,
         and `<title>` are extracted from the filename in the last part of `<path>`.
@@ -115,7 +117,7 @@ class LogCanonicalizer:
         `<publisher>` is optional.
 
         Args:
-            log_section (LogSection): The section of the log (Doc or Paper).
+            log_section (LogSection): The section of the log.
             log_item (str): The log item string to be canonicalized.
             sep (str, optional): The separator between path and title in the log item. Defaults to "|".
 

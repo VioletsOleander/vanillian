@@ -4,7 +4,6 @@ import sys
 from pathlib import Path
 
 from .log.canonicalizer import LogCanonicalizer
-from .log.constants import LOG_PATH
 from .log.utils import read_lines, write_lines_atomic
 
 logging.basicConfig(
@@ -63,15 +62,16 @@ def main() -> int:
 
     if args.command == "log":
         try:
-            lines = read_lines(LOG_PATH)
+            log_path = Path(args.file)
+            lines = read_lines(log_path)
 
             canonicalizer = LogCanonicalizer()
             canonicalizer.canonicalize(lines, force=args.force)
 
-            dest_path = LOG_PATH if args.overwrite else LOG_PATH.with_suffix(".canonicalized.md")
+            dest_path = log_path if args.overwrite else log_path.with_suffix(".canonicalized.md")
             write_lines_atomic(dest_path, lines)
         except FileNotFoundError:
-            logger.exception("Log file not found at %s", LOG_PATH)
+            logger.exception("Log file not found at %s", log_path)
             return 1
         except Exception:
             logger.exception("An error occurred while canonicalizing the log.")
