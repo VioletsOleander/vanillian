@@ -1,0 +1,18 @@
+name: Pre-commit hooks that do not require project environment
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  run-hooks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+      - name: Run pre-commit hooks
+        uses: j178/prek-action@v1
+        with:
+          extra_args: --skip ty-check --skip import-linter

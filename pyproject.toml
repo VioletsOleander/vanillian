@@ -3,9 +3,7 @@ name = "vanillian"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-authors = [
-    { name = "VioletsOleander", email = "1377232072@qq.com" }
-]
+authors = [{ name = "VioletsOleander", email = "1377232072@qq.com" }]
 requires-python = ">=3.14"
 dependencies = []
 
@@ -18,6 +16,8 @@ vn = "vanillian.main:main"
 requires = ["uv_build>=0.9.13,<0.10.0"]
 build-backend = "uv_build"
 
+[dependency-groups]
+dev = ["import-linter>=2.11", "ruff>=0.15.5", "ty>=0.0.12"]
 
 [tool.ruff]
 line-length = 100
@@ -93,18 +93,17 @@ convention = "google"
 # allow using asserts in tests
 "tests/**" = ["S101"]
 # allow using asserts in testing module
-"src/naive_speculate/testing/**" = ["S101"]
+"src/vanillian/testing/**" = ["S101"]
 
-[tool.pylint."messages control"]
-disable = "all"
-enable = ["cyclic-import"]
+[tool.importlinter]
+root_package = "vanillian"
+include_external_packages = true
+exclude_type_checking_imports = true
+
+[[tool.importlinter.contracts]]
+name = "Acyclic Imports"
+type = "acyclic_siblings"
+ancestors = ["vanillian"]
 
 [tool.pytest]
 addopts = ["--import-mode=importlib"]
-
-[dependency-groups]
-dev = [
-    "pylint>=4.0.4",
-    "pytest>=9.0.2",
-    "ty>=0.0.12",
-]
