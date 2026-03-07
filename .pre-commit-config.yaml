@@ -1,6 +1,8 @@
+default_install_hook_types: [pre-commit, commit-msg]
+default_stages: [pre-commit]
 repos:
   - repo: https://github.com/streetsidesoftware/cspell-cli
-    rev: v9.4.0
+    rev: v9.6.0
     hooks:
       - id: cspell # Spell check changed files
         name: Cspell (Files)
@@ -12,10 +14,11 @@ repos:
           - --no-summary
           - --files
           - .git/COMMIT_EDITMSG
-        stages: [commit-msg]
         always_run: true
+        pass_filenames: false
+        stages: [commit-msg]
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.10
+    rev: v0.14.14
     hooks:
       - id: ruff-check # Ruff Linter
         name: Ruff Lint
@@ -29,13 +32,9 @@ repos:
         entry: uv run ty check
         language: unsupported
         types: [python]
-      - id: pylint-cyclic-import # Pylint Cyclic Import Check
-        name: Pylint Cyclic Import Check
-        entry: uv run pylint
+      - id: import-linter
+        name: Import Linter
+        entry: uv run lint-imports
         language: unsupported
         types: [python]
-        require_serial: true
-        args: [
-            "-rn", # Only display messages
-            "-sn", # Don't display the score
-          ]
+        pass_filenames: false
