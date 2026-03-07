@@ -10,14 +10,14 @@ class Frequency(StrEnum):
     WEEKLY = "weekly"
 
 
-def _make_daily_headline(commit_day: datetime.datetime) -> str:
+def _make_daily_headline(commit_day: datetime.date) -> str:
     """Construct daily commit headline based on the given commit day."""
     date = commit_day.strftime("%Y-%m-%d")
     weekday = commit_day.strftime("%A")
     return f"log(daily): {date} {weekday}"
 
 
-def _make_weekly_headline(commit_day: datetime.datetime) -> str:
+def _make_weekly_headline(commit_day: datetime.date) -> str:
     """Construct weekly commit headline based on the given commit day."""
     day_of_month = int(commit_day.strftime("%d"))
     week_of_month = (day_of_month - 1) // 7 + 1
@@ -33,7 +33,7 @@ class GitCommitRegularly:
         if frequency not in Frequency:
             raise ValueError(f"Unsupported frequency {frequency}")
 
-        today = datetime.datetime.today()
+        today = datetime.date.today()
         commit_day = today - datetime.timedelta(days=1) if late else today
 
         headline_makers = {
