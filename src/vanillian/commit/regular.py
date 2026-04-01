@@ -71,7 +71,7 @@ class GitCommitRegularly:
         # Therefore, the user can never interact with the editor, causing
         # git never exits, causing python never exits -> dead lock.
 
-        # check=False to now let python capture the return code and raise exceptions
+        # check=False to not let python capture the return code and raise exceptions
         result = subprocess.run(command)  # noqa: S603, PLW1510
 
         # allow the user to abort the commit (return code 1)
