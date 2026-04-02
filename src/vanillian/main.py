@@ -35,6 +35,7 @@ def handle_exception(func: Callable[[], int]) -> Callable[[], int]:
     return wrapper
 
 
+@handle_exception
 def main() -> int:
     args = parse_args()
 

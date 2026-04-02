@@ -31,7 +31,9 @@ class GitCommitItem:
                 f.write(commit_msg + "\n")
 
             command = ["git", "commit", "-F", str(temp_file), "-e"]
-            subprocess.run(command, check=False)
+            result = subprocess.run(command, check=False)
+            if result.returncode not in (0, 1):
+                raise RuntimeError(f"Git commit failed with return code {result.returncode}")
         finally:
             temp_file.unlink(missing_ok=True)
 
@@ -121,13 +123,11 @@ class GitCommitItem:
 
     def _generate_commit_message(self, note_file: str, note_info: dict[str, str]) -> str:
         """Generate commit message based on the given note file path, and its parsed info."""
-        # Acquire all committed file paths in the current HEAD commit.
-        command = ["git", "ls-tree", "-r", "HEAD", "--name-only"]
-        result = subprocess.run(command, capture_output=True, encoding="utf-8", check=True)
-        files = set(filter(None, (line.strip() for line in result.stdout.splitlines())))
+        command = ["git", "cat-file", "-e", f"HEAD:{note_file}"]
+        result = subprocess.run(command, capture_output=True, check=False)
 
         # If the note file already exists in HEAD, it's an update; otherwise, it's an addition.
-        status = "update" if note_file in files else "add"
+        status = "update" if result.returncode == 0 else "add"
 
         if note_info["type"] == "doc":
             if note_info["category"]:
