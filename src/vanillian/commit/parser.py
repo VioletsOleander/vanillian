@@ -26,8 +26,7 @@ def register_subparser(subparsers: argparse._SubParsersAction[argparse.ArgumentP
         help="Generate headline as if now is one day earlier",
     )
     parser.add_argument(
-        "-e",
-        "--edit",
+        "--no-edit",
         action="store_true",
-        help="Open the editor for editing the commit message before committing",
+        help="Do not open the editor for editing the commit message before committing",
     )

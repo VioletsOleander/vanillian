@@ -42,7 +42,7 @@ def main() -> int:
             command.execute(
                 frequency=args.frequency,
                 late=args.late,
-                edit=args.edit,
+                no_edit=args.no_edit,
             )
         except Exception:
             logger.exception("An error occurred while executing the commit.")
