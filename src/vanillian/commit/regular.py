@@ -28,21 +28,6 @@ def _make_weekly_headline(commit_day: datetime.date) -> str:
 
 
 class GitCommitRegularly:
-    def _generate_headline(self, frequency: Frequency, *, late: bool = False) -> str:
-        """Generate commit headline based on given frequency and late flag."""
-        if frequency not in Frequency:
-            raise ValueError(f"Unsupported frequency {frequency}")
-
-        today = datetime.date.today()
-        commit_day = today - datetime.timedelta(days=1) if late else today
-
-        headline_makers = {
-            Frequency.DAILY: _make_daily_headline,
-            Frequency.WEEKLY: _make_weekly_headline,
-        }
-
-        return headline_makers[frequency](commit_day)
-
     def execute(self, frequency: Frequency, *, late: bool = False, no_edit: bool = False) -> None:
         """Generate commit headline based on given frequency and late flag, then commit changes.
 
@@ -79,3 +64,18 @@ class GitCommitRegularly:
         # allow the user to abort the commit (return code 1)
         if result.returncode not in (0, 1):
             raise RuntimeError(f"Git commit failed with return code {result.returncode}")
+
+    def _generate_headline(self, frequency: Frequency, *, late: bool = False) -> str:
+        """Generate commit headline based on given frequency and late flag."""
+        if frequency not in Frequency:
+            raise ValueError(f"Unsupported frequency {frequency}")
+
+        today = datetime.date.today()
+        commit_day = today - datetime.timedelta(days=1) if late else today
+
+        headline_makers = {
+            Frequency.DAILY: _make_daily_headline,
+            Frequency.WEEKLY: _make_weekly_headline,
+        }
+
+        return headline_makers[frequency](commit_day)
