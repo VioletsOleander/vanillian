@@ -43,21 +43,23 @@ class GitCommitRegularly:
 
         return headline_makers[frequency](commit_day)
 
-    def execute(self, frequency: Frequency, *, late: bool = False, edit: bool = False) -> None:
+    def execute(self, frequency: Frequency, *, late: bool = False, no_edit: bool = False) -> None:
         """Generate commit headline based on given frequency and late flag, then commit changes.
 
         Args:
             frequency (Frequency): The frequency of the commit (daily or weekly).
             late (bool, optional): If True, generate headline as if now is one day earlier.
                 Defaults to False.
-            edit (bool, optional): If True, open the editor for editing the commit message before committing.
-                Defaults to False.
+            no_edit (bool, optional): If True, do not open the editor for editing the commit message
+                before committing. Defaults to False.
         """
         headline = self._generate_headline(frequency, late=late)
 
         command = ["git", "commit", "--allow-empty"]
-        if edit:
-            command.append("-e")
+        if no_edit:
+            command.append("--no-edit")
+        else:
+            command.append("--edit")
         command.extend(["-m", headline])
 
         # If specify `capture_output=True`, dead lock will happen:
@@ -71,8 +73,8 @@ class GitCommitRegularly:
         # Therefore, the user can never interact with the editor, causing
         # git never exits, causing python never exits -> dead lock.
 
-        # check=False to not let python capture the return code and raise exceptions
-        result = subprocess.run(command)  # noqa: S603, PLW1510
+        # check=False so subprocess.run does not raise CalledProcessError on non-zero exit codes
+        result = subprocess.run(command, check=False)  # noqa: S603
 
         # allow the user to abort the commit (return code 1)
         if result.returncode not in (0, 1):
