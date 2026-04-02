@@ -8,13 +8,16 @@
       "addWords": true
     }
   ],
-  "dictionaries": ["project-words"],
+  "dictionaries": [
+    "project-words"
+  ],
   "ignorePaths": [
     "project-words.txt",
     "uv.lock",
     "pyproject.toml",
     ".gitignore",
     "cspell.json",
-    ".pre-commit-config.yaml"
+    ".pre-commit-config.yaml",
+    "cliff.toml",
   ]
 }
