@@ -22,7 +22,7 @@ class GitCommitItem:
 
         commit_msg = self._generate_commit_message(note_file, note_info)
         logger.info("Generated commit message:")
-        separator = "-" * 60
+        separator = "-" * len(commit_msg)
         logger.info("%s\n%s\n%s", separator, commit_msg, separator)
 
         try:
