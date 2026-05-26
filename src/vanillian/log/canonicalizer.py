@@ -9,58 +9,47 @@ __all__ = ["LogCanonicalizer"]
 logger = logging.getLogger(__name__)
 
 
-class _LogSection(StrEnum):
-    DOC = "Doc"
-    PAPER = "Paper"
-    WIKI = "Wiki"
-    Other = "Other"
-
-
-def _match_section(
-    line: str, section_patterns: dict[_LogSection, re.Pattern]
-) -> _LogSection | None:
-    """Return the log section type if the line matches any section pattern, else None."""
-    for section_type, pattern in section_patterns.items():
-        if pattern.fullmatch(line):
-            return section_type
-    return None
-
-
 class LogCanonicalizer:
     def __init__(self) -> None:
         self.section_patterns = {
             _LogSection.DOC: re.compile(r"\\\[Doc\\\]\s"),
             _LogSection.PAPER: re.compile(r"\\\[Paper\\\]\s"),
             _LogSection.WIKI: re.compile(r"\\\[Wiki\\\]\s"),
-            _LogSection.Other: re.compile(r"\\\[.+\\\]\s"),
+            _LogSection.OTHER: re.compile(r"\\\[.+\\\]\s"),
         }
         self.log_item_pattern = re.compile(r"^- \[\[.+\]\]:?")
         self.paper_file_name_pattern = re.compile(
             r"^(?P<title>.+)-(?P<year>\d{4})(-(?P<publisher>.+))?$"
         )
 
-    def canonicalize(self, lines: list[str], *, force: bool = False) -> None:
+    def canonicalize(self, lines: list[str], *, force: bool = False) -> list[str]:
         """Canonicalize log items in the provided lines.
 
-        Modifies the input lines in place.
+        Modify the input lines in place.
 
         Args:
             lines (list[str]): The lines of the log file.
             force (bool, optional): If True, canonicalize without asking for confirmation. Defaults to False.
+
+        Returns:
+            list[str]: The canonicalized log lines.
         """
         logger.info("Starting log canonicalization.")
-        current_section = _LogSection.Other
+
+        current_section = _LogSection.OTHER
         for idx, line in enumerate(lines):
             if (match := _match_section(line, self.section_patterns)) is not None:
-                level = logger.info if current_section != _LogSection.Other else logger.debug
+                level = logger.info if current_section != _LogSection.OTHER else logger.debug
                 level("Line: %d: Entering section: '%s'", idx, match.value)
                 current_section = match
-            elif self.log_item_pattern.match(line) and current_section != _LogSection.Other:
+            elif self.log_item_pattern.match(line) and current_section != _LogSection.OTHER:
                 logger.info("Line: %d: Processing...", idx)
                 lines[idx] = self._canonicalize_line(current_section, line, force=force)
                 logger.info("Line: %d: Finished processing.", idx)
 
         logger.info("Log canonicalization completed.")
+
+        return lines
 
     def _canonicalize_line(
         self,
@@ -152,3 +141,20 @@ class LogCanonicalizer:
                 raise ValueError(f"Unhandled log section: {log_section}")
 
         return f"{path}{sep}{new_title}"
+
+
+class _LogSection(StrEnum):
+    DOC = "Doc"
+    PAPER = "Paper"
+    WIKI = "Wiki"
+    OTHER = "Other"
+
+
+def _match_section(
+    line: str, section_patterns: dict[_LogSection, re.Pattern]
+) -> _LogSection | None:
+    """Return the log section type if the line matches any section pattern, else None."""
+    for section_type, pattern in section_patterns.items():
+        if pattern.fullmatch(line):
+            return section_type
+    return None

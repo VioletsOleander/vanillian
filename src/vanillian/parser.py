@@ -12,7 +12,7 @@ def parse_args() -> argparse.Namespace:
     prog = Path(sys.argv[0]).name
     parser = argparse.ArgumentParser(
         prog=prog,
-        description="The dedicated steward for vault-vanilla.",
+        description="The toolbox for vault-vanilla.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
