@@ -5,7 +5,7 @@ import subprocess
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from .parse import parse_args
+from .parser import parse_args
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -47,7 +47,7 @@ def main() -> int:
         lines = read_lines(log_path)
 
         canonicalizer = LogCanonicalizer()
-        canonicalizer.canonicalize(lines, force=args.force)
+        lines = canonicalizer.canonicalize(lines, force=args.force)
 
         dest_path = log_path if args.overwrite else log_path.with_suffix(".canonicalized.md")
         write_lines_atomic(dest_path, lines)
