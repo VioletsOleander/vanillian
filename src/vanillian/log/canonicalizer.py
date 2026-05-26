@@ -25,6 +25,8 @@ class LogCanonicalizer:
     def canonicalize(self, lines: list[str], *, force: bool = False) -> list[str]:
         """Canonicalize log items in the provided lines.
 
+        Modify the input lines in place.
+
         Args:
             lines (list[str]): The lines of the log file.
             force (bool, optional): If True, canonicalize without asking for confirmation. Defaults to False.
