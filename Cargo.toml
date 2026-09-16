@@ -1,0 +1,12 @@
+#:schema https://www.schemastore.org/cargo.json
+
+[package]
+name = "vanillian"
+version = "0.1.0"
+edition = "2024"
+description = "The toolbox for vault-vanilla"
+
+[dependencies]
+anyhow = "1.0.104"
+chrono = "0.4.45"
+clap = { version = "4.6.7", features = ["derive"] }
