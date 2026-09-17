@@ -28,9 +28,9 @@ impl CommitDaily {
             // Git commit aborted by the user.
             Some(1) => Ok(()),
             Some(code) => Err(anyhow!(format!(
-                "Subprocess failed with return code {code}"
+                "subprocess failed with return code {code}"
             ))),
-            None => Err(anyhow!("Subprocess terminated by signal.")),
+            None => Err(anyhow!("subprocess terminated by signal.")),
         }
     }
 }
