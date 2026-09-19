@@ -1,4 +1,4 @@
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 use anyhow::{Result, anyhow};
 use regex::Regex;
@@ -61,8 +61,11 @@ fn get_note_path() -> Result<String> {
 
 /// Return true if the note file already exists in HEAD, othrwise return false.
 fn note_exists(note_path: &str) -> Result<bool> {
+    // Capture stderr so that git cat-file do not print borthering message if file does not exists
+    // in HEAD.
     let status = Command::new("git")
         .args(["cat-file", "-e", &format!("HEAD:{note_path}")])
+        .stderr(Stdio::null())
         .status()?;
 
     Ok(status.success())
