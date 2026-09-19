@@ -5,6 +5,11 @@ use regex::Regex;
 
 pub struct CommitNote;
 
+struct NoteInfo<'a> {
+    category: &'a str,
+    identifier: &'a str,
+}
+
 impl CommitNote {
     pub fn run() -> Result<()> {
         let note_path = get_note_path()?;
@@ -35,11 +40,6 @@ impl CommitNote {
     }
 }
 
-struct NoteInfo<'a> {
-    category: &'a str,
-    identifier: &'a str,
-}
-
 /// Return the path of the staged note file.
 ///
 /// The returned path is relative to the root directory of current git repository.
@@ -66,6 +66,42 @@ fn note_exists(note_path: &str) -> Result<bool> {
         .status()?;
 
     Ok(status.success())
+}
+
+fn get_note_info<'a>(note_path: &'a str) -> Result<NoteInfo<'a>> {
+    // Pattern breakdown:
+    // ^(?<category>[a-z]+)-notes/ --> capture note category (e.g. "paper" from paper-notes/)
+    // (?<identifier>[^/]+?)\.md$  --> capture note identifier (e.g. "rust/cargo/Glossary" from doc-notes/rust/cargo/Glossary.md)
+    let re = Regex::new(r"^(?<category>[a-z]+)-notes/(?<identifier>.+?)\.md$")?;
+
+    let captures = re
+        .captures(note_path)
+        .ok_or_else(|| anyhow!("note path {} does not match the desired pattern", note_path))?;
+
+    let category = captures
+        .name("category")
+        .ok_or_else(|| {
+            anyhow!(
+                "failed to capture note category from note path {}",
+                note_path
+            )
+        })?
+        .as_str();
+
+    let identifier = captures
+        .name("identifier")
+        .ok_or_else(|| {
+            anyhow!(
+                "failed to capture note identifier from note path {}",
+                note_path
+            )
+        })?
+        .as_str();
+
+    Ok(NoteInfo {
+        category,
+        identifier,
+    })
 }
 
 fn make_header(note_info: NoteInfo, note_exists: bool) -> Result<String> {
@@ -134,42 +170,6 @@ fn make_header(note_info: NoteInfo, note_exists: bool) -> Result<String> {
             identifier = note_info.identifier,
         )),
     }
-}
-
-fn get_note_info<'a>(note_path: &'a str) -> Result<NoteInfo<'a>> {
-    // Pattern breakdown:
-    // ^(?<category>[a-z]+)-notes/ --> capture note category (e.g. "paper" from paper-notes/)
-    // (?<identifier>[^/]+?)\.md$  --> capture note identifier (e.g. "rust/cargo/Glossary" from doc-notes/rust/cargo/Glossary.md)
-    let re = Regex::new(r"^(?<category>[a-z]+)-notes/(?<identifier>.+?)\.md$")?;
-
-    let captures = re
-        .captures(note_path)
-        .ok_or_else(|| anyhow!("note path {} does not match the desired pattern", note_path))?;
-
-    let category = captures
-        .name("category")
-        .ok_or_else(|| {
-            anyhow!(
-                "failed to capture note category from note path {}",
-                note_path
-            )
-        })?
-        .as_str();
-
-    let identifier = captures
-        .name("identifier")
-        .ok_or_else(|| {
-            anyhow!(
-                "failed to capture note identifier from note path {}",
-                note_path
-            )
-        })?
-        .as_str();
-
-    Ok(NoteInfo {
-        category,
-        identifier,
-    })
 }
 
 #[cfg(test)]
