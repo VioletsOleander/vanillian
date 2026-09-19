@@ -1,7 +1,9 @@
+use clap::builder::Styles;
 use clap::{Args, Parser, Subcommand};
 
 #[derive(Parser)]
 #[command(version, about)]
+#[command(styles = Styles::styled())]
 pub struct VanillianArgs {
     #[command(subcommand)]
     subcommand: VanillianSubcommand,
