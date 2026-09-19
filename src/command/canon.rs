@@ -1,7 +1,7 @@
 use std::fs::{File, rename};
 use std::io::{BufRead, BufReader, BufWriter, Write};
 
-use anyhow::{Result, anyhow};
+use anyhow::{Context, Result, anyhow};
 use itertools::process_results;
 use regex::{Regex, regex};
 
@@ -24,10 +24,16 @@ struct Section {
 
 impl Canonicalize {
     pub fn run(args: &CanonicalizeArgs) -> Result<()> {
-        let reader = BufReader::new(File::open(args.file())?);
+        let reader = BufReader::new(
+            File::open(args.file())
+                .with_context(|| format!("failed to open file {}", args.file()))?,
+        );
 
         let f_temp = format!("{}.VANILLIAN.TEMPORARY", args.file());
-        let writer = BufWriter::new(File::open(&f_temp)?);
+        let writer = BufWriter::new(
+            File::create(&f_temp)
+                .with_context(|| format!("failed to create temporary file {}", f_temp))?,
+        );
 
         // The resturn value is a result wraps another result, the outer result is from
         // reader.lines().next(), the inner result is from canonicalize_lines().
