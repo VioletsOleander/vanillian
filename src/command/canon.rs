@@ -1,9 +1,10 @@
-use std::fs::{File, rename};
+use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 
 use anyhow::{Context, Result, anyhow};
 use itertools::process_results;
 use regex::{Regex, regex};
+use tempfile::NamedTempFile;
 
 use crate::arg::CanonicalizeArgs;
 
@@ -29,11 +30,8 @@ impl Canonicalize {
                 .with_context(|| format!("failed to open file {}", args.file()))?,
         );
 
-        let f_temp = format!("{}.VANILLIAN.TEMPORARY", args.file());
-        let writer = BufWriter::new(
-            File::create(&f_temp)
-                .with_context(|| format!("failed to create temporary file {}", f_temp))?,
-        );
+        let f_temp = NamedTempFile::new().context("failed to create temporary file")?;
+        let writer = BufWriter::new(&f_temp);
 
         // The resturn value is a result wraps another result, the outer result is from
         // reader.lines().next(), the inner result is from canonicalize_lines().
@@ -44,7 +42,9 @@ impl Canonicalize {
             false => &format!("{}.canonicalized", args.file()),
         };
 
-        rename(f_temp, f_out)?;
+        f_temp
+            .persist(f_out)
+            .with_context(|| format!("failed to persit temp file to {}", f_out))?;
 
         Ok(())
     }
@@ -75,6 +75,8 @@ fn canonicalize_lines(lines: impl Iterator<Item = String>, mut writer: impl Writ
             write_line(&mut writer, line.trim_end())?;
             continue;
         };
+
+        // todo: detect canonical entry and just skip format for them, also improve perf
 
         let captures = entry_regex.captures(&line);
 
