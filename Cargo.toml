@@ -10,4 +10,8 @@ description = "The toolbox for vault-vanilla"
 anyhow = "1.0.104"
 chrono = "0.4.45"
 clap = { version = "4.6.7", features = ["derive"] }
+itertools = "0.15.0"
 regex = "1.13.1"
+
+[dev-dependencies]
+pretty_assertions = "1.4.1"

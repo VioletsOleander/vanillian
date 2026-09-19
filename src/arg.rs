@@ -27,11 +27,18 @@ pub struct CanonicalizeArgs {
     /// Path to the log file.
     file: String,
     #[arg(short, long)]
-    /// Do not ask for confirmation before canonicalizing each log line.
-    force: bool,
-    #[arg(short, long)]
     /// Overwrite the original file instead of writing to a ".canonicalized" suffixed file.
     overwrite: bool,
+}
+
+impl CanonicalizeArgs {
+    pub fn file(&self) -> &str {
+        &self.file
+    }
+
+    pub fn overwrite(&self) -> bool {
+        self.overwrite
+    }
 }
 
 #[derive(Subcommand)]
