@@ -129,11 +129,11 @@ fn canonicalize_entry(entry: String, section_kind: SectionKind) -> Result<String
     let re = regex!(r"^- \[\[(?<identifier>.+)\]\](?<suffix>:.+)?\s*$");
     let captures = re
         .captures(&entry)
-        .ok_or_else(|| anyhow!("entry {} does not match the desired pattern", entry))?;
+        .ok_or_else(|| anyhow!("entry '{}' does not match the desired pattern", entry))?;
 
     let identifier = captures
         .name("identifier")
-        .ok_or_else(|| anyhow!("failed to capture identifier from entry {}", entry))?
+        .ok_or_else(|| anyhow!("failed to capture identifier from entry '{}'", entry))?
         .as_str();
 
     let (path, name) = split_identifier(identifier)?;
@@ -162,7 +162,7 @@ fn split_identifier(identifier: &str) -> Result<(&str, &str)> {
     match (parts.next(), parts.next(), parts.next()) {
         (Some(path), Some(name), None) => Ok((path, name)),
         _ => Err(anyhow!(
-            "expected identifier has a single | as separator in the middle, but got {}",
+            "expected identifier has a single | as separator in the middle, but got '{}'",
             identifier
         )),
     }
@@ -171,7 +171,7 @@ fn split_identifier(identifier: &str) -> Result<(&str, &str)> {
 fn make_doc_name(path: &str) -> Result<&str> {
     let canonical_name = path.strip_prefix("doc-notes/").ok_or_else(|| {
         anyhow!(
-            "expected doc path perfixed with doc-notes/, but got {}",
+            "expected doc path perfixed with doc-notes/, but got '{}'",
             path
         )
     })?;
@@ -182,7 +182,7 @@ fn make_doc_name(path: &str) -> Result<&str> {
 fn make_wiki_name(path: &str) -> Result<&str> {
     let canonical_name = path.strip_prefix("wiki-notes/").ok_or_else(|| {
         anyhow!(
-            "expected wiki path perfixed with wiki-notes/, but got {}",
+            "expected wiki path perfixed with wiki-notes/, but got '{}'",
             path
         )
     })?;
