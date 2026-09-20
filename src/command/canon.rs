@@ -135,7 +135,7 @@ fn canonicalize_entry(entry: String, section_kind: SectionKind) -> Result<String
         .ok_or_else(|| anyhow!("failed to capture identifier from entry {}", entry))?
         .as_str();
 
-    let (path, name) = split_identifier(identifier.trim_end())?;
+    let (path, name) = split_identifier(identifier)?;
     let canonical_name = match section_kind {
         SectionKind::Doc => make_doc_name(path)?,
         SectionKind::Wiki => make_wiki_name(path)?,
