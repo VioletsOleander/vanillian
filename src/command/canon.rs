@@ -74,7 +74,7 @@ fn canonicalize_lines(lines: impl Iterator<Item = String>, mut writer: impl Writ
             continue;
         };
 
-        match line.starts_with("- ") {
+        match line.starts_with("- [[") {
             true => {
                 // Current line is a log entry.
                 let line = canonicalize_entry(line, section_kind)?;
