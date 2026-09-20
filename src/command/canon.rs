@@ -64,51 +64,23 @@ impl Section {
 
 fn canonicalize_lines(lines: impl Iterator<Item = String>, mut writer: impl Write) -> Result<()> {
     let sections = make_sections()?;
-    // Match - [[<any>]]: <any> or - [[<any>]]
-    let entry_regex = Regex::new(r"^- \[\[(?<identifier>.+)\]\](?<suffix>:.+)?$")?;
 
-    let mut current_kind = SectionKind::Other;
+    let mut section_kind = SectionKind::Other;
     for line in lines {
         if let Some(section) = sections.iter().find(|&section| section.is_match(&line)) {
             // Current line is a section header.
-            current_kind = section.kind;
+            section_kind = section.kind;
             write_line(&mut writer, line.trim_end())?;
             continue;
         };
 
-        // todo: detect canonical entry and just skip format for them, also improve perf
-
-        let captures = entry_regex.captures(&line);
-
-        match captures {
-            Some(captures) => {
+        match line.starts_with("- ") {
+            true => {
                 // Current line is a log entry.
-                let identifier = captures
-                    .name("identifier")
-                    .ok_or_else(|| anyhow!("failed to capture identifier from entry {}", line))?
-                    .as_str();
-
-                // I am suprised to find that this compiles. It relies on "temporary lifetime extension".
-                // Apprantely this makes the code much concise.
-                let identifier = match current_kind {
-                    SectionKind::Doc => &canonicalize_doc_identifier(identifier)?,
-                    SectionKind::Wiki => &canonicalize_wiki_identifier(identifier)?,
-                    SectionKind::Paper => &canonicalize_paper_identifier(identifier)?,
-                    _ => identifier,
-                };
-
-                match captures.name("suffix") {
-                    Some(suffix) => {
-                        let line = format!("- [[{identifier}]]{suffix}", suffix = suffix.as_str());
-                        write_line(&mut writer, &line)?;
-                    }
-                    None => {
-                        let line = format!("- [[{identifier}]]");
-                        write_line(&mut writer, &line)?;
-                    }
-                }
+                let line = canonicalize_entry(line, section_kind)?;
+                write_line(&mut writer, line.trim_end())?;
             }
-            None => {
+            false => {
                 // Current line is a normal text line.
                 write_line(&mut writer, line.trim_end())?;
             }
@@ -149,6 +121,38 @@ fn write_line(writer: &mut impl Write, line: &str) -> Result<()> {
     Ok(())
 }
 
+fn canonicalize_entry(entry: String, section_kind: SectionKind) -> Result<String> {
+    // Match - [[<any>]]: <any> or - [[<any>]]
+    let re = regex!(r"^- \[\[(?<identifier>.+)\]\](?<suffix>:.+)?$");
+    let captures = re
+        .captures(&entry)
+        .ok_or_else(|| anyhow!("entry {} does not match the desired pattern", entry))?;
+
+    let identifier = captures
+        .name("identifier")
+        .ok_or_else(|| anyhow!("failed to capture identifier from entry {}", entry))?
+        .as_str();
+
+    let (path, name) = split_identifier(identifier.trim_end())?;
+    let canonical_name = match section_kind {
+        SectionKind::Doc => make_doc_name(path)?,
+        SectionKind::Wiki => make_wiki_name(path)?,
+        SectionKind::Paper => &make_paper_name(path)?,
+        _ => name,
+    };
+
+    match name == canonical_name {
+        true => Ok(entry),
+        false => match captures.name("suffix") {
+            Some(suffix) => Ok(format!(
+                "- [[{path}|{canonical_name}]]{suffix}",
+                suffix = suffix.as_str()
+            )),
+            None => Ok(format!("- [[{path}|{canonical_name}]]")),
+        },
+    }
+}
+
 fn split_identifier(identifier: &str) -> Result<(&str, &str)> {
     let mut parts = identifier.split('|');
 
@@ -161,66 +165,59 @@ fn split_identifier(identifier: &str) -> Result<(&str, &str)> {
     }
 }
 
-fn canonicalize_doc_identifier(identifier: &str) -> Result<String> {
-    let (path, _) = split_identifier(identifier.trim_end())?;
-
-    let subpath = path.strip_prefix("doc-notes/").ok_or_else(|| {
+fn make_doc_name(path: &str) -> Result<&str> {
+    let canonical_name = path.strip_prefix("doc-notes/").ok_or_else(|| {
         anyhow!(
             "expected doc path perfixed with doc-notes/, but got {}",
-            identifier
+            path
         )
     })?;
 
-    Ok(format!("{path}|{subpath}"))
+    Ok(canonical_name)
 }
 
-fn canonicalize_wiki_identifier(identifier: &str) -> Result<String> {
-    let (path, _) = split_identifier(identifier.trim_end())?;
-
-    let subpath = path.strip_prefix("wiki-notes/").ok_or_else(|| {
+fn make_wiki_name(path: &str) -> Result<&str> {
+    let canonical_name = path.strip_prefix("wiki-notes/").ok_or_else(|| {
         anyhow!(
-            "expected wiki identifier perfixed with wiki-notes/, but got {}",
-            identifier
+            "expected wiki path perfixed with wiki-notes/, but got {}",
+            path
         )
     })?;
 
-    Ok(format!("{path}|{subpath}"))
+    Ok(canonical_name)
 }
 
-fn canonicalize_paper_identifier(identifier: &str) -> Result<String> {
-    let (path, name) = split_identifier(identifier.trim_end())?;
-
+fn make_paper_name(path: &str) -> Result<String> {
     // Match <name> or <name>-<year> or <name>-<year>-<publisher>
     // Group <name> should be ungreedy, otherwise capture will fail.
-    let re = regex!(r"^(?<name>.+?)(?:-(?<year>[0-9]{4}))?(?:-(?<publisher>[A-Z]+))?$");
+    let re = regex!(
+        r"^(?:paper-notes/(?:.*/)?)(?<name>.+?)(?:-(?<year>[0-9]{4}))?(?:-(?<publisher>[A-Z]+))?$"
+    );
     let captures = re
-        .captures(name)
-        .ok_or_else(|| anyhow!("note name {} does not match the desired pattern", name))?;
+        .captures(path)
+        .ok_or_else(|| anyhow!("note path {} does not match the desired pattern", path))?;
 
     let paper_name = captures
         .name("name")
-        .ok_or_else(|| anyhow!("failed to capture paper name from note name {}", name))?
+        .ok_or_else(|| anyhow!("failed to capture paper name from note path {}", path))?
         .as_str();
 
     let year = captures
         .name("year")
         .ok_or_else(|| {
             anyhow!(
-                "failed to capture paper publish year from note name {}",
-                name
+                "failed to capture paper publish year from note path {}",
+                path
             )
         })?
         .as_str();
 
     let publisher = captures
         .name("publisher")
-        .ok_or_else(|| anyhow!("failed to capture paper publisher from note name {}", name))?
+        .ok_or_else(|| anyhow!("failed to capture paper publisher from note path {}", path))?
         .as_str();
 
-    Ok(format!(
-        "{path}|{identifier}",
-        identifier = [year, publisher, paper_name].join("-")
-    ))
+    Ok([year, publisher, paper_name].join("-"))
 }
 
 #[cfg(test)]
@@ -251,37 +248,113 @@ mod test {
     }
 
     #[test]
-    fn doc_identifier() -> Result<()> {
-        let identifier = "doc-notes/rust/reference/items/Modules|Modules";
-        let identifier = canonicalize_doc_identifier(identifier)?;
+    fn doc_path() -> Result<()> {
+        let path = "doc-notes/rust/reference/items/Modules";
+        let name = make_doc_name(path)?;
+
+        assert_eq!(name, "rust/reference/items/Modules",);
+
+        Ok(())
+    }
+
+    #[test]
+    fn wiki_path() -> Result<()> {
+        let path = "wiki-notes/software-test/Test double";
+        let name = make_wiki_name(path)?;
+
+        assert_eq!(name, "software-test/Test double");
+
+        Ok(())
+    }
+
+    #[test]
+    fn paper_path() -> Result<()> {
+        let path = "paper-notes/distributed-system/In Search of an Understandable Consensus Algorithm (Extended Version)-2014-ATC";
+        let name = make_paper_name(path)?;
 
         assert_eq!(
-            identifier,
-            "doc-notes/rust/reference/items/Modules|rust/reference/items/Modules",
+            name,
+            "2014-ATC-In Search of an Understandable Consensus Algorithm (Extended Version)",
         );
 
         Ok(())
     }
 
     #[test]
-    fn wiki_identifier() -> Result<()> {
-        let identifier = "wiki-notes/Type variance|Type variance";
-        let identifier = canonicalize_wiki_identifier(identifier)?;
+    fn doc_entry() -> Result<()> {
+        let entry = "- [[doc-notes/rust/reference/items/Modules|Modules]]".to_string();
+        let canonical_entry = canonicalize_entry(entry, SectionKind::Doc)?;
 
-        assert_eq!(identifier, "wiki-notes/Type variance|Type variance");
+        assert_eq!(
+            canonical_entry,
+            "- [[doc-notes/rust/reference/items/Modules|rust/reference/items/Modules]]"
+        );
 
         Ok(())
     }
 
     #[test]
-    fn paper_identifier() -> Result<()> {
-        let identifier = "paper-notes/distributed-system/In Search of an Understandable Consensus Algorithm (Extended Version)-2014-ATC|In Search of an Understandable Consensus Algorithm (Extended Version)-2014-ATC";
-
-        let identifier = canonicalize_paper_identifier(identifier)?;
+    fn wiki_entry() -> Result<()> {
+        let entry = "- [[wiki-notes/software-test/Test double|Test double]]".to_string();
+        let canonical_entry = canonicalize_entry(entry, SectionKind::Wiki)?;
 
         assert_eq!(
-            identifier,
-            "paper-notes/distributed-system/In Search of an Understandable Consensus Algorithm (Extended Version)-2014-ATC|2014-ATC-In Search of an Understandable Consensus Algorithm (Extended Version)",
+            canonical_entry,
+            "- [[wiki-notes/software-test/Test double|software-test/Test double]]"
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn paper_entry() -> Result<()> {
+        let entry = "- [[paper-notes/distributed-system/In Search of an Understandable Consensus Algorithm (Extended Version)-2014-ATC|In Search of an Understandable Consensus Algorithm (Extended Version)-2014-ATC]]".to_string();
+        let canonical_entry = canonicalize_entry(entry, SectionKind::Paper)?;
+
+        assert_eq!(
+            canonical_entry,
+            "- [[paper-notes/distributed-system/In Search of an Understandable Consensus Algorithm (Extended Version)-2014-ATC|2014-ATC-In Search of an Understandable Consensus Algorithm (Extended Version)]]"
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn doc_canonical_entry() -> Result<()> {
+        let entry =
+            "- [[doc-notes/rust/reference/items/Modules|rust/reference/items/Modules]]".to_string();
+        let canonical_entry = canonicalize_entry(entry, SectionKind::Doc)?;
+
+        assert_eq!(
+            canonical_entry,
+            "- [[doc-notes/rust/reference/items/Modules|rust/reference/items/Modules]]"
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn wiki_canonical_entry() -> Result<()> {
+        let entry =
+            "- [[wiki-notes/software-test/Test double|software-test/Test double]]".to_string();
+        let canonical_entry = canonicalize_entry(entry, SectionKind::Wiki)?;
+
+        assert_eq!(
+            canonical_entry,
+            "- [[wiki-notes/software-test/Test double|software-test/Test double]]"
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn paper_canonical_entry() -> Result<()> {
+        let entry = "- [[paper-notes/distributed-system/In Search of an Understandable Consensus Algorithm (Extended Version)-2014-ATC|2014-ATC-In Search of an Understandable Consensus Algorithm (Extended Version)]]".to_string();
+        let canonical_entry = canonicalize_entry(entry, SectionKind::Paper)?;
+
+        assert_eq!(
+            canonical_entry,
+            "- [[paper-notes/distributed-system/In Search of an Understandable Consensus Algorithm (Extended Version)-2014-ATC|2014-ATC-In Search of an Understandable Consensus Algorithm (Extended Version)]]"
         );
 
         Ok(())
