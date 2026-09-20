@@ -212,12 +212,12 @@ fn make_paper_name(path: &str) -> Result<String> {
         })?
         .as_str();
 
-    let publisher = captures
-        .name("publisher")
-        .ok_or_else(|| anyhow!("failed to capture paper publisher from note path {}", path))?
-        .as_str();
+    let publisher = captures.name("publisher");
 
-    Ok([year, publisher, paper_name].join("-"))
+    match publisher {
+        Some(publisher) => Ok([year, publisher.as_str(), paper_name].join("-")),
+        None => Ok([year, paper_name].join("-")),
+    }
 }
 
 #[cfg(test)]
@@ -248,7 +248,7 @@ mod test {
     }
 
     #[test]
-    fn doc_path() -> Result<()> {
+    fn doc_name() -> Result<()> {
         let path = "doc-notes/rust/reference/items/Modules";
         let name = make_doc_name(path)?;
 
@@ -258,7 +258,7 @@ mod test {
     }
 
     #[test]
-    fn wiki_path() -> Result<()> {
+    fn wiki_name() -> Result<()> {
         let path = "wiki-notes/software-test/Test double";
         let name = make_wiki_name(path)?;
 
@@ -268,13 +268,26 @@ mod test {
     }
 
     #[test]
-    fn paper_path() -> Result<()> {
+    fn paper_name() -> Result<()> {
         let path = "paper-notes/distributed-system/In Search of an Understandable Consensus Algorithm (Extended Version)-2014-ATC";
         let name = make_paper_name(path)?;
 
         assert_eq!(
             name,
             "2014-ATC-In Search of an Understandable Consensus Algorithm (Extended Version)",
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn paper_name_without_publisher() -> Result<()> {
+        let path = "paper-notes/distributed-system/In Search of an Understandable Consensus Algorithm (Extended Version)-2014";
+        let name = make_paper_name(path)?;
+
+        assert_eq!(
+            name,
+            "2014-In Search of an Understandable Consensus Algorithm (Extended Version)",
         );
 
         Ok(())
