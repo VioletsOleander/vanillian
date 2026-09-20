@@ -46,6 +46,8 @@ impl Canonicalize {
             .persist(f_out)
             .with_context(|| format!("failed to persit temp file to {}", f_out))?;
 
+        println!("Canonicalization done, result written to '{}'", f_out);
+
         Ok(())
     }
 }
@@ -123,7 +125,7 @@ fn write_line(writer: &mut impl Write, line: &str) -> Result<()> {
 
 fn canonicalize_entry(entry: String, section_kind: SectionKind) -> Result<String> {
     // Match - [[<any>]]: <any> or - [[<any>]]
-    let re = regex!(r"^- \[\[(?<identifier>.+)\]\](?<suffix>:.+)?$");
+    let re = regex!(r"^- \[\[(?<identifier>.+)\]\](?<suffix>:.+)?\s*$");
     let captures = re
         .captures(&entry)
         .ok_or_else(|| anyhow!("entry {} does not match the desired pattern", entry))?;
@@ -191,7 +193,7 @@ fn make_paper_name(path: &str) -> Result<String> {
     // Match <name> or <name>-<year> or <name>-<year>-<publisher>
     // Group <name> should be ungreedy, otherwise capture will fail.
     let re = regex!(
-        r"^(?:paper-notes/(?:.*/)?)(?<name>.+?)(?:-(?<year>[0-9]{4}))?(?:-(?<publisher>[A-Z]+))?$"
+        r"^(?:paper-notes/(?:.*/)?)(?<name>.+?)(?:-(?<year>[0-9]{4}))?(?:-(?<publisher>[A-Za-z]+))?$"
     );
     let captures = re
         .captures(path)
