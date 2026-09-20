@@ -1,3 +1,13 @@
+## [0.2.1] - 2026-09-20
+
+### Bug Fixes
+
+- Create temp file instead of open it (#23)
+- Use tempfile to ensure cleanup on possible failure (#24)
+- Allow already canonical entry pass (#25)
+- Recognize bullet point but none entry (#26)
+- Allow paper name without publisher (#27)
+- Allow non-publisher paper path and entry with trailing space (#28)
 ## [0.2.0] - 2026-09-19
 
 ### Features
@@ -24,6 +34,7 @@
 - [**breaking**] Remove redundant entry point (#10)
 - Add README, remove cspell (#13)
 - Remove precommit (#21)
+- Release v0.2.0 (#22)
 ## [0.1.0] - 2026-04-02
 
 ### Features
