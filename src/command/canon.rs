@@ -33,7 +33,7 @@ impl Canonicalize {
         let f_temp = NamedTempFile::new().context("failed to create temporary file")?;
         let writer = BufWriter::new(&f_temp);
 
-        // The resturn value is a result wraps another result, the outer result is from
+        // The returned value is a result wraps another result, the outer result is from
         // reader.lines().next(), the inner result is from canonicalize_lines().
         process_results(reader.lines(), |lines| canonicalize_lines(lines, writer))??;
 
@@ -44,7 +44,7 @@ impl Canonicalize {
 
         f_temp
             .persist(f_out)
-            .with_context(|| format!("failed to persit temp file to {}", f_out))?;
+            .with_context(|| format!("failed to persist temp file to {}", f_out))?;
 
         println!("Canonicalization done, result written to '{}'", f_out);
 
@@ -68,7 +68,7 @@ fn canonicalize_lines(lines: impl Iterator<Item = String>, mut writer: impl Writ
     let sections = make_sections()?;
 
     let mut section_kind = SectionKind::Other;
-    for line in lines {
+    for (idx, line) in lines.enumerate() {
         if let Some(section) = sections.iter().find(|&section| section.is_match(&line)) {
             // Current line is a section header.
             section_kind = section.kind;
@@ -79,7 +79,8 @@ fn canonicalize_lines(lines: impl Iterator<Item = String>, mut writer: impl Writ
         match line.starts_with("- [[") {
             true => {
                 // Current line is a log entry.
-                let line = canonicalize_entry(line, section_kind)?;
+                let line = canonicalize_entry(line, section_kind)
+                    .with_context(|| format!("failed to canonicalize entry in line {}", idx + 1))?;
                 write_line(&mut writer, line.trim_end())?;
             }
             false => {
