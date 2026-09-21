@@ -9,7 +9,7 @@ pub struct CommitDaily;
 
 impl CommitDaily {
     pub fn run(args: &CommitDailyArgs) -> Result<()> {
-        let header = make_header(args.late());
+        let header = make_header(args.late())?;
 
         let command_args = match args.skip_edit() {
             true => ["commit", "--allow-empty", "--no-edit", "-m", &header],
@@ -35,17 +35,17 @@ impl CommitDaily {
     }
 }
 
-fn make_header(late: bool) -> String {
+fn make_header(late: bool) -> Result<String> {
     let today = Local::now().date_naive();
     let commit_day = match late {
         true => today
             .checked_sub_days(Days::new(1))
-            .expect("The result date should be within the range."),
+            .ok_or_else(|| anyhow!("failed to construct commit day"))?,
         false => today,
     };
 
     let date = commit_day.format("%Y-%m-%d");
     let weekday = commit_day.format("%A");
 
-    format!("log(daily) {date} {weekday}")
+    Ok(format!("log(daily) {date} {weekday}"))
 }

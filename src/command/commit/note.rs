@@ -32,9 +32,7 @@ impl CommitNote {
             Some(0) => Ok(()),
             // Git commit aborted by the user.
             Some(1) => Ok(()),
-            Some(code) => Err(anyhow!(format!(
-                "subprocess failed with return code {code}"
-            ))),
+            Some(code) => Err(anyhow!("subprocess failed with return code {code}")),
             None => Err(anyhow!("subprocess terminated by signal.")),
         }
     }
