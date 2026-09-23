@@ -68,26 +68,23 @@ fn canonicalize_lines(lines: impl Iterator<Item = String>, mut writer: impl Writ
     let sections = make_sections()?;
 
     let mut section_kind = SectionKind::Other;
-    for (idx, line) in lines.enumerate() {
-        if let Some(section) = sections.iter().find(|&section| section.is_match(&line)) {
-            // Current line is a section header.
-            section_kind = section.kind;
-            write_line(&mut writer, line.trim_end())?;
-            continue;
+    for line in lines {
+        let canonical_line = match sections.iter().find(|&section| section.is_match(&line)) {
+            Some(section) => {
+                // Current line is a section header.
+                section_kind = section.kind;
+                line.trim_end()
+            }
+            None => match line.starts_with("- [[") {
+                // Current line is a log entry.
+                true => &canonicalize_entry(line, section_kind)?,
+                // Current line is a normal text line.
+                false => line.trim_end(),
+            },
         };
 
-        match line.starts_with("- [[") {
-            true => {
-                // Current line is a log entry.
-                let line = canonicalize_entry(line, section_kind)
-                    .with_context(|| format!("failed to canonicalize entry in line {}", idx + 1))?;
-                write_line(&mut writer, line.trim_end())?;
-            }
-            false => {
-                // Current line is a normal text line.
-                write_line(&mut writer, line.trim_end())?;
-            }
-        }
+        writer.write_all(canonical_line.as_bytes())?;
+        writer.write_all(b"\n")?;
     }
 
     writer.flush()?;
@@ -115,13 +112,6 @@ fn make_sections() -> Result<[Section; SectionKind::num_kinds()]> {
             regex: Regex::new(r"^\\\[.+\\\]\s*$")?,
         },
     ])
-}
-
-fn write_line(writer: &mut impl Write, line: &str) -> Result<()> {
-    writer.write_all(line.as_bytes())?;
-    writer.write_all(b"\n")?;
-
-    Ok(())
 }
 
 fn canonicalize_entry(entry: String, section_kind: SectionKind) -> Result<String> {
