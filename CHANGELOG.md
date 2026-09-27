@@ -1,3 +1,16 @@
+## [0.2.2] - 2026-09-27
+
+### Refactor
+
+- Remove unnecessary trim_end() (#30)
+- Add line number context to failure case (#32)
+- Add single quote to make error message more clear (#33)
+- Improve some error handling (#34)
+- Simplify canonicalize loop
+
+### Miscellaneous Tasks
+
+- Add test (#31)
 ## [0.2.1] - 2026-09-20
 
 ### Bug Fixes
@@ -8,6 +21,10 @@
 - Recognize bullet point but none entry (#26)
 - Allow paper name without publisher (#27)
 - Allow non-publisher paper path and entry with trailing space (#28)
+
+### Miscellaneous Tasks
+
+- Release v0.2.1 (#29)
 ## [0.2.0] - 2026-09-19
 
 ### Features
