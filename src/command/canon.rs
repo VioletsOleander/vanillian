@@ -8,8 +8,6 @@ use tempfile::NamedTempFile;
 
 use crate::arg::CanonicalizeArgs;
 
-pub struct Canonicalize;
-
 #[derive(Clone, Copy, Debug)]
 enum SectionKind {
     Paper,
@@ -18,16 +16,17 @@ enum SectionKind {
     Other,
 }
 
+pub struct Canonicalize;
+
 struct Section {
     kind: SectionKind,
     regex: Regex,
 }
 
 impl Canonicalize {
-    pub fn run(args: &CanonicalizeArgs) -> Result<()> {
+    pub fn run(args: CanonicalizeArgs) -> Result<()> {
         let reader = BufReader::new(
-            File::open(args.file())
-                .with_context(|| format!("failed to open file {}", args.file()))?,
+            File::open(&args.file).with_context(|| format!("failed to open file {}", args.file))?,
         );
 
         let f_temp = NamedTempFile::new().context("failed to create temporary file")?;
@@ -37,9 +36,9 @@ impl Canonicalize {
         // reader.lines().next(), the inner result is from canonicalize_lines().
         process_results(reader.lines(), |lines| canonicalize_lines(lines, writer))??;
 
-        let f_out = match args.overwrite() {
-            true => args.file(),
-            false => &format!("{}.canonicalized", args.file()),
+        let f_out = match args.overwrite {
+            true => &args.file,
+            false => &format!("{}.canonicalized", args.file),
         };
 
         f_temp
