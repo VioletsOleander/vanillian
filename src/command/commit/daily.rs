@@ -8,10 +8,10 @@ use crate::arg::CommitDailyArgs;
 pub struct CommitDaily;
 
 impl CommitDaily {
-    pub fn run(args: &CommitDailyArgs) -> Result<()> {
-        let header = make_header(args.late())?;
+    pub fn run(args: CommitDailyArgs) -> Result<()> {
+        let header = make_header(args.late)?;
 
-        let command_args = match args.skip_edit() {
+        let command_args = match args.skip_edit {
             true => ["commit", "--allow-empty", "--no-edit", "-m", &header],
             false => ["commit", "--allow-empty", "--edit", "-m", &header],
         };

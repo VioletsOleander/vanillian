@@ -6,13 +6,7 @@ use clap::{Args, Parser, Subcommand};
 #[command(styles = Styles::styled())]
 pub struct VanillianArgs {
     #[command(subcommand)]
-    subcommand: VanillianSubcommand,
-}
-
-impl VanillianArgs {
-    pub fn subcommand(&self) -> &VanillianSubcommand {
-        &self.subcommand
-    }
+    pub subcommand: VanillianSubcommand,
 }
 
 #[derive(Subcommand)]
@@ -27,20 +21,10 @@ pub enum VanillianSubcommand {
 #[derive(Args)]
 pub struct CanonicalizeArgs {
     /// Path to the log file.
-    file: String,
+    pub file: String,
     #[arg(short, long)]
     /// Overwrite the original file instead of writing to a ".canonicalized" suffixed file.
-    overwrite: bool,
-}
-
-impl CanonicalizeArgs {
-    pub fn file(&self) -> &str {
-        &self.file
-    }
-
-    pub fn overwrite(&self) -> bool {
-        self.overwrite
-    }
+    pub overwrite: bool,
 }
 
 #[derive(Subcommand)]
@@ -55,18 +39,8 @@ pub enum CommitSubcommand {
 pub struct CommitDailyArgs {
     #[arg(short, long)]
     /// Generate the message header for yesterday.
-    late: bool,
+    pub late: bool,
     #[arg(short, long)]
     /// Do not open an editor for editing the commit message further.
-    skip_edit: bool,
-}
-
-impl CommitDailyArgs {
-    pub fn late(&self) -> bool {
-        self.late
-    }
-
-    pub fn skip_edit(&self) -> bool {
-        self.skip_edit
-    }
+    pub skip_edit: bool,
 }
