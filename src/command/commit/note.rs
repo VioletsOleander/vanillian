@@ -3,6 +3,8 @@ use std::process::{Command, Stdio};
 use anyhow::{Result, anyhow};
 use regex::Regex;
 
+use crate::arg::CommitNoteArgs;
+
 pub struct CommitNote;
 
 struct NoteInfo<'a> {
@@ -11,7 +13,7 @@ struct NoteInfo<'a> {
 }
 
 impl CommitNote {
-    pub fn run() -> Result<()> {
+    pub fn run(args: CommitNoteArgs) -> Result<()> {
         let note_path = get_note_path()?;
 
         let note_info = get_note_info(&note_path)?;
@@ -23,9 +25,15 @@ impl CommitNote {
         // process launch git -> git launch editor -> editor waits for stdout (captured by process)
         // -> git waits for editor to exit -> process waits for git to exit -> deadlock
         // `Command.status` will not capture stdout, therefore deadlock will not happen.
-        let status = Command::new("git")
-            .args(["commit", "--edit", "-m", &header])
-            .status()?;
+        let status = if args.edit {
+            Command::new("git")
+                .args(["commit", "--edit", "-m", &header])
+                .status()?
+        } else {
+            Command::new("git")
+                .args(["commit", "-m", &header])
+                .status()?
+        };
 
         match status.code() {
             // Git commit exited normally.

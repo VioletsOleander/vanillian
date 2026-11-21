@@ -14,7 +14,7 @@ impl Commit {
     pub fn run(subcommand: CommitSubcommand) -> Result<()> {
         match subcommand {
             CommitSubcommand::Daily(args) => CommitDaily::run(args),
-            CommitSubcommand::Note => CommitNote::run(),
+            CommitSubcommand::Note(args) => CommitNote::run(args),
         }
     }
 }
