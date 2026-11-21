@@ -32,7 +32,7 @@ pub enum CommitSubcommand {
     /// Generate a message header for daily commit and commit staged changes.
     Daily(CommitDailyArgs),
     /// Generate a message header based on staged notes and commit staged changes.
-    Note,
+    Note(CommitNoteArgs),
 }
 
 #[derive(Args)]
@@ -43,4 +43,11 @@ pub struct CommitDailyArgs {
     #[arg(short, long)]
     /// Do not open an editor for editing the commit message further.
     pub skip_edit: bool,
+}
+
+#[derive(Args)]
+pub struct CommitNoteArgs {
+    #[arg(short, long)]
+    /// Let the user further edit the commit message.
+    pub edit: bool,
 }
